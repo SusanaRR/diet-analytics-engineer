@@ -1,0 +1,28 @@
+version: 2
+
+sources:
+  - name: app_events
+    database: "{{ env_var('TARGET_ENV', 'dev') }}_diet_app"
+    schema: app_events
+    tables:
+      - name: raw_meal_logs
+        description: "Synthetic meal log events generated daily, one row per user per day"
+        loaded_at_field: logged_at
+        freshness:
+          warn_after: {count: 12, period: hour}
+          error_after: {count: 25, period: hour}
+        columns:
+          - name: user_id
+            description: "References the user from the users seed"
+            data_tests:
+              - not_null
+          - name: breakfast
+            description: "List of fdc_id values logged for breakfast"
+          - name: lunch
+            description: "List of fdc_id values logged for lunch"
+          - name: dinner
+            description: "List of fdc_id values logged for dinner"
+          - name: logged_at
+            description: "Timestamp when the user logged their meals for the day"
+            data_tests:
+              - not_null

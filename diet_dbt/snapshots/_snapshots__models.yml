@@ -1,0 +1,54 @@
+version: 2
+
+snapshots:
+  - name: dim_foods_snapshot
+    description: >
+      SCD Type 2 history of dim_foods. A new row is added whenever any
+      tracked macro nutrient value changes for a given food.
+    columns:
+      - name: dbt_scd_id
+        data_type: varchar
+        description: "Surrogate key for the snapshot row (hash of unique_key + dbt_valid_from)"
+        data_tests:
+          - unique
+          - not_null
+      - name: fdc_id
+        data_type: integer
+        description: "Unique identifier for the food (natural key)"
+        data_tests:
+          - not_null
+      - name: description
+        data_type: varchar
+        description: "Food name"
+      - name: protein_g
+        data_type: float
+        description: "Protein content per 100g"
+      - name: fat_g
+        data_type: float
+        description: "Fat content per 100g"
+      - name: carbohydrate_g
+        data_type: float
+        description: "Carbohydrate content per 100g"
+      - name: fiber_g
+        data_type: float
+        description: "Fiber content per 100g"
+      - name: total_sugar_g
+        data_type: float
+        description: "Total sugar content per 100g"
+      - name: publication_date_id
+        data_type: integer
+        description: "YYYYMMDD integer FK to dim_date for the USDA publication date"
+      - name: loaded_date_id
+        data_type: integer
+        description: "YYYYMMDD integer FK to dim_date for when the row was loaded"
+      - name: dbt_valid_from
+        data_type: timestamptz
+        description: "Timestamp this version of the row became current"
+        data_tests:
+          - not_null
+      - name: dbt_valid_to
+        data_type: timestamptz
+        description: "Timestamp this version was superseded, null if still current"
+      - name: dbt_updated_at
+        data_type: timestamptz
+        description: "Timestamp dbt last evaluated this row"

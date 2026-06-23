@@ -1,0 +1,11 @@
+user_id,user_name,country,birth_date,height_cm,registered_at
+1,María García López,Spain,1990-03-14,162,2026-05-01 09:23:14+02:00
+2,Carlos Martínez Sánchez,Spain,1985-07-22,178,2026-05-03 14:11:30+02:00
+3,Ana Fernández Ruiz,Spain,1972-11-05,165,2026-05-05 08:45:00+02:00
+4,Javier López Moreno,Spain,2000-01-30,180,2026-05-08 17:30:22+02:00
+5,Laura González Jiménez,Spain,1995-09-18,167,2026-05-10 12:00:00+02:00
+6,Pedro Rodríguez Álvarez,Spain,1965-04-07,174,2026-05-13 10:15:45+02:00
+7,Isabel Pérez Romero,Spain,1988-12-25,160,2026-05-15 16:22:10+02:00
+8,Miguel Sánchez Torres,Spain,1978-06-11,177,2026-05-19 11:30:00+02:00
+9,Sofía Martín Navarro,Spain,2003-08-03,163,2026-05-23 20:45:33+02:00
+10,Antonio Díaz Herrero,Spain,1955-02-19,171,2026-05-28 07:00:00+02:00

@@ -1,0 +1,30 @@
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.python-version
+
+# Environment
+.env
+.env.dbt
+
+# Data
+data/
+
+# Logs
+logs/
+diet_dbt/logs/
+
+# dbt
+diet_dbt/target/
+diet_dbt/dbt_packages/
+
+# macOS
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Checks
+checks/

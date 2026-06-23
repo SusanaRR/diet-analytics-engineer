@@ -1,0 +1,26 @@
+# dbt connection profiles
+# -------------------------------------------------------
+# Copy this file to ~/.dbt/profiles.yml and fill in your paths.
+# Do NOT commit profiles.yml — it contains local paths.
+#
+# The schema prefix (e.g. "dev") is combined with the +schema
+# set in dbt_project.yml to form the full schema name in DuckDB
+# (e.g. dev_marts, dev_marketing). Change it here only if you
+# want to namespace your schemas differently.
+# -------------------------------------------------------
+
+diet_dbt:
+  outputs:
+    dev:
+      type: duckdb
+      database: dev_diet_app
+      schema: dev
+      path: /absolute/path/to/diet-analytics-engineer/data/dev_diet_app.duckdb
+      threads: 1
+    prod:
+      type: duckdb
+      database: prod_diet_app
+      schema: diet_app
+      path: /absolute/path/to/diet-analytics-engineer/data/prod_diet_app.duckdb
+      threads: 4
+  target: dev

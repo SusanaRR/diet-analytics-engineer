@@ -1,0 +1,25 @@
+version: 2
+
+sources:
+  - name: raw
+    database: "{{ env_var('TARGET_ENV', 'dev') }}_diet_app"
+    schema: usda
+    tables:
+      - name: raw_foods
+        description: "Raw JSON responses from /foods/list, one row per food, loaded by usda/extract.py. Relates to SRLegacy food"
+        loaded_at_field: loaded_at
+        freshness:
+          warn_after: {count: 30, period: day}
+          error_after: {count: 60, period: day}
+        columns:
+          - name: fdc_id
+            description: "USDA FoodData Central unique identifier for the food"
+            data_tests:
+              - unique
+              - not_null
+          - name: raw_json
+            description: "Full raw JSON object returned by the API for this food"
+          - name: loaded_at
+            description: "Timestamp (UTC) when this row was inserted by extract.py"
+            data_tests:
+              - not_null

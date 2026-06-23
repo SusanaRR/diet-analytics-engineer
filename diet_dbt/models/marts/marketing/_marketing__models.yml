@@ -1,0 +1,119 @@
+version: 2
+
+models:
+  - name: fct_user_segments_windowed
+    description: >
+      One row per user per nutrient. Snapshot of each user's intake classification
+      across three windows: last day, last 7 days, last 30 days. Suitable for a
+      segmentation summary table where the analyst compares short- vs long-term
+      behaviour without scrolling through daily history.
+      Grain: user_id + nutrient_id.
+    columns:
+      - name: user_id
+        data_type: integer
+        description: "References dim_users"
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_users')
+              field: user_id
+      - name: nutrient_id
+        data_type: integer
+        description: "References dim_nutrients (excludes carbohydrate — no segment defined)"
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_nutrients')
+              field: nutrient_id
+      - name: reference_date
+        data_type: date
+        description: "Most recent logged date for this user — anchor for all window calculations"
+        data_tests:
+          - not_null
+      - name: last_day_g
+        data_type: double
+        description: "Total intake on the reference date"
+      - name: last_7d_avg_g
+        data_type: double
+        description: "Average daily intake over the 7 days ending on reference_date"
+      - name: last_30d_avg_g
+        data_type: double
+        description: "Average daily intake over the 30 days ending on reference_date"
+      - name: threshold_g
+        data_type: double
+        description: "Recommended threshold in grams. Personalised for protein, generic for others."
+      - name: threshold_type
+        data_type: varchar
+        description: "min = flagged when below threshold, max = flagged when above threshold"
+        data_tests:
+          - accepted_values:
+              values: ['min', 'max']
+      - name: segment_label
+        data_type: varchar
+        description: "Segment name if flagged (low_protein, high_fat, low_fiber, high_sugar)"
+      - name: is_flagged_last_day
+        data_type: boolean
+        description: "True if last day intake is outside the recommended range"
+      - name: is_flagged_last_7d
+        data_type: boolean
+        description: "True if 7-day average is outside the recommended range"
+      - name: is_flagged_last_30d
+        data_type: boolean
+        description: "True if 30-day average is outside the recommended range"
+
+  - name: fct_user_segments
+    description: >
+      One row per user per nutrient per day. Classifies whether a user's daily
+      intake of each nutrient is flagged based on recommended thresholds from
+      nutrient_daily_targets. Protein threshold is personalised per user
+      (weight_kg x 0.8 from dim_users); all other thresholds are generic FDA/WHO
+      daily values. Carbohydrate has no segment defined and is excluded.
+      Grain: user + nutrient + date.
+    columns:
+      - name: user_id
+        data_type: integer
+        description: "References dim_users"
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_users')
+              field: user_id
+      - name: nutrient_id
+        data_type: integer
+        description: "References dim_nutrients (excludes nutrient_id 3 / carbohydrate)"
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_nutrients')
+              field: nutrient_id
+      - name: logged_date
+        data_type: date
+        description: "Date of the daily intake record"
+        data_tests:
+          - not_null
+      - name: logged_date_id
+        data_type: integer
+        description: "YYYYMMDD integer FK to dim_date (e.g. 20260621)"
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_id
+      - name: daily_value_g
+        data_type: double
+        description: "Total grams of this nutrient consumed across all meals that day"
+      - name: threshold_g
+        data_type: double
+        description: "Recommended threshold in grams. Personalised for protein, generic for others."
+      - name: threshold_type
+        data_type: varchar
+        description: "min = flagged when below threshold, max = flagged when above threshold"
+        data_tests:
+          - accepted_values:
+              values: ['min', 'max']
+      - name: segment_label
+        data_type: varchar
+        description: "Segment name if flagged (low_protein, high_fat, low_fiber, high_sugar)"
+      - name: is_flagged
+        data_type: boolean
+        description: "True if this user's intake for this nutrient on this day is outside the recommendation"

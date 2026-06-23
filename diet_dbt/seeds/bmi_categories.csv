@@ -1,0 +1,5 @@
+bmi_category_id,min_bmi,max_bmi,category
+1,0,18.5,Underweight
+2,18.5,25.0,Normal weight
+3,25.0,30.0,Overweight
+4,30.0,999,Obese

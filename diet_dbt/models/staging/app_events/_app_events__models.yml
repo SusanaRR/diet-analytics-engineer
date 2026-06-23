@@ -1,0 +1,113 @@
+version: 2
+
+models:
+  - name: stg_app_events__users
+    description: >
+      Grain: user_id.
+      One row per user, sourced from the users seed. Casts types and
+      standardises column names for downstream consumption.
+    columns:
+      - name: user_id
+        data_type: integer
+        description: "Sequential identifier for the user, primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: country
+        data_type: varchar
+        description: >
+          Country of the user. Currently restricted to Spain as the app targets
+          Spanish users only. The accepted_values test enforces this — if the
+          app expands to new countries, this test must be updated to include them.
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Spain']
+      - name: birth_date
+        data_type: date
+        description: "Date of birth of the user"
+        data_tests:
+          - not_null
+      - name: height_cm
+        data_type: float
+        description: "Height in centimetres"
+        data_tests:
+          - not_null
+      - name: registered_at
+        data_type: timestamp
+        description: >
+          Timestamp (UTC) when the user registered in the app. Stored as a plain
+          timestamp (no timezone offset) because DuckDB's AT TIME ZONE operator
+          converts a TIMESTAMPTZ to a TIMESTAMP locked to the specified timezone.
+          The value is in UTC.
+        data_tests:
+          - not_null
+
+  - name: stg_app_events__weight_logs
+    description: >
+      Grain: weight_log_id (user_id + weight_kg + recorded_at UTC hash).
+      One row per weight log entry from the weight_logs seed. Normalises
+      recorded_at to UTC first (TIMESTAMPTZ → plain TIMESTAMP via AT TIME ZONE),
+      then derives weight_log_id as a surrogate key from the UTC-normalised values
+      using dbt_utils.generate_surrogate_key. recorded_date_id is derived in
+      int_users_bmi_history, not here.
+    columns:
+      - name: weight_log_id
+        data_type: varchar
+        description: "Surrogate key: md5 hash of user_id + weight_kg + recorded_at (UTC-normalised)"
+        data_tests:
+          - unique
+          - not_null
+      - name: user_id
+        data_type: integer
+        description: "References the user from the users seed"
+        data_tests:
+          - not_null
+      - name: weight_kg
+        description: "Self-reported body weight in kilograms at the time of the log"
+        data_type: float
+        data_tests:
+          - not_null
+      - name: recorded_at
+        data_type: timestamp
+        description: >
+          Timestamp (UTC) when the weight was logged. Stored as a plain timestamp
+          (no timezone offset) because DuckDB's AT TIME ZONE converts TIMESTAMPTZ
+          to a TIMESTAMP locked to the specified timezone. The value is in UTC.
+        data_tests:
+          - not_null
+
+  - name: stg_app_events__meal_logs
+    description: >
+      Grain: user_id + logged_at.
+      One row per user per meal-log event from raw_meal_logs. Normalises
+      logged_at to UTC as TIMESTAMPTZ and retains the breakfast, lunch, and
+      dinner arrays of fdc_ids as-is. Date truncation and date_id derivation
+      happen in the intermediate layer. Individual meal arrays can be null or
+      empty — a user may skip a meal or simply not log it in the app — but at
+      least one meal must be logged per event. This is enforced by a custom
+      singular test: tests/assert_meal_logs_have_at_least_one_meal.sql.
+    columns:
+      - name: user_id
+        data_type: integer
+        description: "References the user from the users seed"
+        data_tests:
+          - not_null
+      - name: breakfast
+        data_type: struct(fdc_id integer, grams float)[]
+        description: "Array of food items logged for breakfast. Can be null or empty if the user did not log this meal."
+      - name: lunch
+        data_type: struct(fdc_id integer, grams float)[]
+        description: "Array of food items logged for lunch. Can be null or empty if the user did not log this meal."
+      - name: dinner
+        data_type: struct(fdc_id integer, grams float)[]
+        description: "Array of food items logged for dinner. Can be null or empty if the user did not log this meal."
+      - name: logged_at
+        data_type: timestamp
+        description: >
+          Timestamp (UTC) when the user logged their meals. Stored as a plain
+          timestamp (no timezone offset) because DuckDB's AT TIME ZONE operator
+          converts a TIMESTAMPTZ to a TIMESTAMP locked to the specified timezone.
+          The value is in UTC.
+        data_tests:
+          - not_null

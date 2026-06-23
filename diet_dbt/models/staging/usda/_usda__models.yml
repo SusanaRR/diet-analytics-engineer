@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  - name: stg_usda__food_nutrients
+    description: >
+      Grain: fdc_id.
+      One row per SR Legacy Food, with scalar fields extracted from the raw
+      JSON. raw_json is preserved as-is so downstream models can unnest the
+      nested foodNutrients array.
+    columns:
+      - name: fdc_id
+        data_type: integer
+        description: "Unique identifier for the food"
+        data_tests:
+          - unique
+          - not_null
+      - name: description
+        data_type: varchar
+        description: "Human-readable name of the food"
+        data_tests:
+          - unique
+          - not_null
+      - name: publication_date
+        data_type: date
+        description: "Date this food record was published to FoodData Central"
+        data_tests:
+          - not_null
+      - name: raw_json
+        data_type: json
+        description: "Full raw JSON, retained for downstream nutrient unnesting"
+        data_tests:
+          - not_null
+      - name: loaded_at
+        data_type: timestamp
+        description: "Timestamp (UTC) when this row was loaded into raw_foods table"
+        data_tests:
+          - not_null

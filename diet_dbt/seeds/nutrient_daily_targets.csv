@@ -1,0 +1,6 @@
+nutrient_id,recommended_daily_g,threshold_type,segment_label,source,notes
+1,50,min,low_protein,FDA,Based on 2000 calorie diet - overridden per user by weight x 0.8
+2,78,max,high_fat,FDA,Based on 2000 calorie diet
+3,275,max,,FDA,"Based on 2000 calorie diet - treated as max (not a true target range) for simplicity, since no carb segment is defined"
+4,28,min,low_fiber,FDA,Based on 2000 calorie diet
+5,50,max,high_sugar,WHO,Less than 10% of daily energy intake

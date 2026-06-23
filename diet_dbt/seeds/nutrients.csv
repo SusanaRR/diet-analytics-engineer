@@ -1,0 +1,6 @@
+nutrient_id,usda_nutrient_id,nutrient_name,unit
+1,203,Protein,g
+2,204,Fat,g
+3,205,Carbohydrate,g
+4,291,Fiber,g
+5,269,Total Sugar,g

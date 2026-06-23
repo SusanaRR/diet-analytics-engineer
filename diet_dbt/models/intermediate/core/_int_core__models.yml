@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: int_users_with_bmi
+    description: >
+      One row per user. Joins stg_app_events__users and the latest row from
+      stg_app_events__weight_logs (by recorded_at) to the bmi_categories seed
+      via a range join to derive bmi and bmi_category. weight_kg reflects the
+      user's most recent weigh-in, not the static registration weight.
+      Grain: user_id.
+    columns:
+      - name: user_id
+        data_type: integer
+        description: "Unique identifier for the user"
+        data_tests:
+          - unique
+          - not_null
+      - name: country
+        data_type: varchar
+        description: "Country of the user"
+      - name: birth_date
+        data_type: date
+        description: "Date of birth of the user"
+      - name: weight_kg
+        data_type: float
+        description: "Body weight in kilograms"
+      - name: height_cm
+        data_type: float
+        description: "Height in centimetres"
+      - name: registered_date_id
+        data_type: integer
+        description: "YYYYMMDD integer FK to dim_date for the registration date (e.g. 20240315)"
+      - name: bmi
+        data_type: float
+        description: "Body Mass Index, rounded to 1 decimal (weight_kg / (height_cm/100)^2)"
+      - name: bmi_category
+        data_type: varchar
+        description: "WHO BMI category derived from range join to bmi_categories seed"

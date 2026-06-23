@@ -1,0 +1,142 @@
+version: 2
+
+models:
+  - name: dim_users
+    description: >
+      One row per user. Shared dimension used across nutrition and marketing
+      marts. Sourced from the users seed via stg_app_events__users.
+      Grain: user_id.
+    columns:
+      - name: user_id
+        data_type: integer
+        description: "Unique identifier for the user, primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: country
+        data_type: varchar
+        description: "Country of the user"
+      - name: birth_date
+        data_type: date
+        description: "Date of birth of the user"
+      - name: weight_kg
+        data_type: float
+        description: "Most recent self-reported body weight in kilograms, sourced from the latest weight_logs entry per user"
+      - name: height_cm
+        data_type: float
+        description: "Height in centimetres"
+      - name: bmi
+        data_type: float
+        description: "Body Mass Index, rounded to 1 decimal (weight_kg / (height_cm/100)^2)"
+      - name: bmi_category
+        data_type: varchar
+        description: "WHO BMI category (Underweight, Normal weight, Overweight, Obese)"
+      - name: recommended_protein_g
+        data_type: float
+        description: "Personalised daily protein recommendation in grams (weight_kg x 0.8)"
+      - name: registered_date_id
+        data_type: integer
+        description: "YYYYMMDD integer FK to dim_date for the registration date (e.g. 20240315)"
+        data_tests:
+          - relationships:
+              to: ref('dim_date')
+              field: date_id
+
+  - name: dim_meals
+    description: >
+      One row per meal type. Shared dimension used to decode meal_id in fact
+      tables (fct_meal_logs, fct_meal_log_nutrients). Sourced from the meals seed.
+      Grain: meal_id.
+    columns:
+      - name: meal_id
+        data_type: integer
+        description: "Sequential identifier for the meal type, primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: meal_name
+        data_type: varchar
+        description: "Human-readable meal name (breakfast, lunch, dinner)"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['breakfast', 'lunch', 'dinner']
+
+  - name: dim_date
+    description: >
+      One row per calendar date from 2019-01-01 to 2027-12-31, generated with
+      dbt_utils.date_spine. Provides date attributes for BI filtering without
+      requiring date-extraction functions on every query. Fact tables reference
+      date_id as a FK to this dimension.
+      Grain: date_id (YYYYMMDD integer).
+    columns:
+      - name: date_id
+        data_type: integer
+        description: "YYYYMMDD integer surrogate key (e.g. 20260621), primary key of this dimension"
+        data_tests:
+          - unique
+          - not_null
+      - name: full_date
+        data_type: date
+        description: "The calendar date"
+        data_tests:
+          - unique
+          - not_null
+      - name: year
+        data_type: integer
+        description: "Calendar year (e.g. 2026)"
+      - name: quarter
+        data_type: integer
+        description: "Quarter of the year (1–4)"
+      - name: month
+        data_type: integer
+        description: "Month number (1–12)"
+      - name: month_name
+        data_type: varchar
+        description: "Full month name (e.g. June)"
+      - name: week_of_year
+        data_type: integer
+        description: "ISO week number within the year (1–53)"
+      - name: day_of_month
+        data_type: integer
+        description: "Day of the month (1–31)"
+      - name: day_of_week
+        data_type: integer
+        description: "Day of the week as integer (0=Sunday, 6=Saturday)"
+      - name: day_name
+        data_type: varchar
+        description: "Full day name (e.g. Sunday)"
+      - name: is_weekend
+        data_type: boolean
+        description: "True if the date falls on Saturday or Sunday"
+
+  - name: dim_nutrients
+    description: >
+      One row per tracked macro nutrient. Shared dimension used to label
+      nutrient columns in reports. Maps the sequential nutrient_id and USDA
+      usda_nutrient_id to a human-readable name and unit of measurement.
+      All nutrient values across the project are in grams per 100g serving.
+      Grain: nutrient_id.
+    columns:
+      - name: nutrient_id
+        data_type: integer
+        description: "Sequential identifier for the nutrient, primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: usda_nutrient_id
+        data_type: integer
+        description: "USDA FoodData Central nutrient number"
+        data_tests:
+          - unique
+          - not_null
+      - name: nutrient_name
+        data_type: varchar
+        description: "Human-readable nutrient name for display in reports"
+        data_tests:
+          - not_null
+      - name: unit
+        data_type: varchar
+        description: "Unit of measurement (g = grams per 100g serving)"
+        data_tests:
+          - not_null

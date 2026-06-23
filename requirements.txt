@@ -1,0 +1,11 @@
+# Python 3.13.2
+altair==6.2.1
+dbt-core==1.11.11
+dbt-duckdb==1.10.1
+duckdb==1.5.4
+ipykernel==7.3.0
+pandas==3.0.3
+python-dotenv==1.2.2
+PyYAML==6.0.3
+requests==2.34.2
+streamlit==1.58.0

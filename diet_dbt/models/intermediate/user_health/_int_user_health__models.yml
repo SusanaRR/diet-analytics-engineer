@@ -1,0 +1,199 @@
+version: 2
+
+models:
+  - name: int_food_nutrients_pivoted_to_foods
+    description: >
+      One row per food (fdc_id). Unnests the foodNutrients array from
+      stg_usda__food_nutrients and pivots it back to one row per food,
+      with each macro nutrient as its own column.
+      Grain: fdc_id.
+    columns:
+      - name: fdc_id
+        data_type: integer
+        description: "Unique identifier for the food"
+        data_tests:
+          - unique
+          - not_null
+      - name: description
+        data_type: varchar
+        description: "Human-readable name of the food"
+      - name: publication_date_id
+        data_type: integer
+        description: "YYYYMMDD integer FK to dim_date for the publication date (e.g. 20260621)"
+      - name: protein_g
+        data_type: double
+        description: "Protein content in grams per 100g"
+      - name: fat_g
+        data_type: double
+        description: "Total fat content in grams per 100g"
+      - name: carbohydrate_g
+        data_type: double
+        description: "Total carbohydrate content in grams per 100g"
+      - name: fiber_g
+        data_type: double
+        description: "Total dietary fiber in grams per 100g"
+      - name: total_sugar_g
+        data_type: double
+        description: "Total sugar content in grams per 100g"
+      - name: loaded_date_id
+        data_type: integer
+        description: "YYYYMMDD integer FK to dim_date for the load date (e.g. 20260621)"
+
+  - name: int_daily_nutrient_intake
+    description: >
+      One row per user per nutrient per day. Pivots int_meal_nutrients_scaled
+      to long format and aggregates to daily totals. Building block for
+      int_user_nutrient_segments.
+      Grain: user_id + nutrient_id + logged_date.
+    columns:
+      - name: user_id
+        data_type: integer
+        description: "References the user"
+        data_tests:
+          - not_null
+      - name: nutrient_id
+        data_type: integer
+        description: "Sequential nutrient identifier (1=protein, 2=fat, 3=carbohydrate, 4=fiber, 5=total_sugar)"
+        data_tests:
+          - not_null
+      - name: logged_date
+        data_type: date
+        description: "Date of the daily intake record"
+        data_tests:
+          - not_null
+      - name: logged_date_id
+        data_type: integer
+        description: "YYYYMMDD integer FK to dim_date (e.g. 20260621)"
+        data_tests:
+          - not_null
+      - name: daily_value_g
+        data_type: double
+        description: "Total grams of this nutrient consumed across all meals that day"
+
+  - name: int_meal_nutrients_scaled
+    description: >
+      One row per user per meal per food item per day. Joins int_meal_logs_unpivoted
+      to int_food_nutrients_pivoted_to_foods and scales each nutrient by the actual
+      serving size logged (nutrient_per_100g x grams / 100). Building block for
+      fct_meal_log_nutrients, which aggregates and pivots this to long format.
+      Grain: user_id + meal_id + fdc_id + logged_date.
+    columns:
+      - name: user_id
+        data_type: integer
+        description: "References the user"
+        data_tests:
+          - not_null
+      - name: meal_id
+        data_type: integer
+        description: "References the meals seed (1=breakfast, 2=lunch, 3=dinner)"
+        data_tests:
+          - not_null
+      - name: logged_date
+        data_type: date
+        description: "Date on which the meal was logged"
+        data_tests:
+          - not_null
+      - name: logged_date_id
+        data_type: integer
+        description: "YYYYMMDD integer FK to dim_date (e.g. 20260621)"
+        data_tests:
+          - not_null
+      - name: protein_g
+        data_type: double
+        description: "Protein intake in grams for this food item at the logged serving size"
+      - name: fat_g
+        data_type: double
+        description: "Fat intake in grams for this food item at the logged serving size"
+      - name: carbohydrate_g
+        data_type: double
+        description: "Carbohydrate intake in grams for this food item at the logged serving size"
+      - name: fiber_g
+        data_type: double
+        description: "Fiber intake in grams for this food item at the logged serving size"
+      - name: total_sugar_g
+        data_type: double
+        description: "Total sugar intake in grams for this food item at the logged serving size"
+
+  - name: int_users_bmi_history
+    description: >
+      One row per weight log entry. Joins stg_app_events__weight_logs to
+      stg_app_events__users to obtain height_cm, then computes BMI at each
+      recorded weight. Building block for fct_bmi_evolution.
+      Grain: weight_log_id (surrogate from user_id + weight_kg + recorded_at UTC).
+    columns:
+      - name: weight_log_id
+        data_type: varchar
+        description: "Surrogate PK: md5 hash of user_id + weight_kg + recorded_at (UTC-normalised)"
+        data_tests:
+          - unique
+          - not_null
+      - name: user_id
+        data_type: integer
+        description: "References the user"
+        data_tests:
+          - not_null
+      - name: weight_kg
+        data_type: float
+        description: "Self-reported body weight in kilograms at the time of the log"
+        data_tests:
+          - not_null
+      - name: height_cm
+        data_type: float
+        description: "User height in centimetres (static, from users seed)"
+        data_tests:
+          - not_null
+      - name: bmi
+        data_type: float
+        description: "Body Mass Index at this weight log entry, rounded to 1 decimal"
+        data_tests:
+          - not_null
+      - name: recorded_date_id
+        data_type: integer
+        description: "YYYYMMDD integer FK to dim_date (e.g. 20250115)"
+        data_tests:
+          - not_null
+
+  - name: int_meal_logs_unpivoted
+    description: >
+      Unnests the breakfast, lunch, and dinner arrays from stg_app_events__meal_logs
+      into long format. Joins the meals seed to replace meal_name with meal_id.
+      Derives logged_date (date truncation from logged_at) and logged_date_id (YYYYMMDD
+      integer FK to dim_date). This is the shared building block for fct_meal_logs
+      and fct_meal_log_nutrients.
+      Grain: user_id + meal_id + fdc_id + logged_date.
+    columns:
+      - name: user_id
+        data_type: integer
+        description: "References the user"
+        data_tests:
+          - not_null
+      - name: meal_id
+        data_type: integer
+        description: "References the meals seed (1=breakfast, 2=lunch, 3=dinner)"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3]
+      - name: fdc_id
+        data_type: integer
+        description: "USDA food id logged in this meal"
+        data_tests:
+          - not_null
+      - name: grams
+        data_type: float
+        description: "Serving size in grams for this food item (random between 80 and 250)"
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1000
+      - name: logged_date
+        data_type: date
+        description: "Date on which the meal was logged, truncated from logged_at"
+        data_tests:
+          - not_null
+      - name: logged_date_id
+        data_type: integer
+        description: "YYYYMMDD integer surrogate key for dim_date (e.g. 20260621)"
+        data_tests:
+          - not_null

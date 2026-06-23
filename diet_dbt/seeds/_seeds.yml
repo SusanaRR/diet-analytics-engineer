@@ -1,0 +1,183 @@
+version: 2
+
+seeds:
+  - name: users
+    description: >
+      Static list of 10 demo users. Used as the source for stg_app_events__users
+      and dim_users. User ids are sequential (1-10) and match the ids generated
+      in synthetic meal logs.
+    columns:
+      - name: user_id
+        data_type: integer
+        description: "Sequential identifier for the user"
+        data_tests:
+          - unique
+          - not_null
+      - name: user_name
+        data_type: varchar
+        description: "Full name of the user (synthetic). Not brought into the analytics warehouse — stays in the app's operational database."
+        data_tests:
+          - not_null
+      - name: country
+        data_type: varchar
+        description: "Country of the user (all Spain for this demo)"
+        data_tests:
+          - not_null
+      - name: birth_date
+        data_type: date
+        description: "Date of birth of the user"
+        data_tests:
+          - not_null
+      - name: height_cm
+        data_type: float
+        description: "Height in centimetres — used to calculate BMI"
+        data_tests:
+          - not_null
+      - name: registered_at
+        data_type: timestamptz
+        description: "Timestamp with timezone offset when the user registered in the app (cast to UTC in staging)"
+        data_tests:
+          - not_null
+
+  - name: meals
+    description: >
+      Lookup table for meal types. Maps meal_id (1-3) to meal_name
+      (breakfast, lunch, dinner). Used in int_meal_logs_unpivoted to
+      replace meal_name strings with a stable integer key.
+    columns:
+      - name: meal_id
+        data_type: integer
+        description: "Sequential identifier for the meal type"
+        data_tests:
+          - unique
+          - not_null
+      - name: meal_name
+        data_type: varchar
+        description: "Human-readable meal name (breakfast, lunch, dinner)"
+        data_tests:
+          - unique
+          - not_null
+          - accepted_values:
+              values: ['breakfast', 'lunch', 'dinner']
+
+  - name: bmi_categories
+    description: >
+      WHO BMI classification ranges. Used in dim_users to derive bmi_category
+      from the calculated BMI value via a range-based join.
+    columns:
+      - name: bmi_category_id
+        data_type: integer
+        description: "Sequential identifier"
+        data_tests:
+          - unique
+          - not_null
+      - name: min_bmi
+        data_type: float
+        description: "Lower bound of the BMI range (NULL for Underweight — no lower bound)"
+      - name: max_bmi
+        data_type: float
+        description: "Upper bound of the BMI range (NULL for Obese — no upper bound)"
+      - name: category
+        data_type: varchar
+        description: "WHO category label (Underweight, Normal weight, Overweight, Obese)"
+        data_tests:
+          - not_null
+
+  - name: nutrient_daily_targets
+    description: >
+      Recommended daily intake thresholds for tracked nutrients. threshold_type
+      indicates whether the value is a minimum (min) or maximum (max) — used
+      to determine the direction of flagging in fct_user_segments. Protein
+      threshold is overridden per user by weight_kg x 0.8 in dim_users.
+      Carbohydrate's daily target is conceptually a range, not a one-sided
+      threshold, but is recorded here as max (flagged when intake exceeds it)
+      for simplicity, since it has no segment_label and therefore no segment
+      currently consumes it.
+    columns:
+      - name: nutrient_id
+        data_type: integer
+        description: "FK to nutrients seed"
+        data_tests:
+          - unique
+          - not_null
+      - name: recommended_daily_g
+        data_type: float
+        description: "Generic recommended daily intake in grams"
+        data_tests:
+          - not_null
+      - name: threshold_type
+        data_type: varchar
+        description: "min = low intake is flagged, max = high intake is flagged, target = no flagging"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['min', 'max', 'target']
+      - name: segment_label
+        data_type: varchar
+        description: "Segment name assigned when flagged (null for carbohydrate)"
+      - name: source
+        data_type: varchar
+        description: "Organisation that published the recommendation (FDA or WHO)"
+      - name: notes
+        data_type: varchar
+        description: "Additional context for the recommendation"
+
+  - name: weight_logs
+    description: >
+      29 weight log entries across 10 users. First entry per user at registration
+      date, then 2 more roughly two weeks apart. Simulates periodic self-reported
+      weight check-ins. No surrogate key in the CSV — weight_log_id is derived in
+      staging as a hash of user_id + weight_kg + recorded_at (UTC-normalised).
+      Used as the source for stg_app_events__weight_logs and fct_bmi_evolution.
+    columns:
+      - name: user_id
+        data_type: integer
+        description: "FK to users seed"
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('users')
+              field: user_id
+      - name: weight_kg
+        data_type: float
+        description: "Self-reported body weight in kilograms at the time of the log"
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 30
+              max_value: 500
+      - name: recorded_at
+        data_type: timestamptz
+        description: "Timestamp with Spain timezone offset when the weight was logged (cast to UTC in staging)"
+        data_tests:
+          - not_null
+
+  - name: nutrients
+    description: >
+      Lookup table for the five tracked macro nutrients. Maps a sequential
+      nutrient_id to the USDA nutrient code, a human-readable name, and the
+      unit of measurement. All values in dim_foods and fct_meal_log_nutrients
+      are expressed in this unit per 100g serving.
+    columns:
+      - name: nutrient_id
+        data_type: integer
+        description: "Sequential identifier for the nutrient"
+        data_tests:
+          - unique
+          - not_null
+      - name: usda_nutrient_id
+        data_type: integer
+        description: "USDA FoodData Central nutrient number (e.g. 203 = Protein)"
+        data_tests:
+          - unique
+          - not_null
+      - name: nutrient_name
+        data_type: varchar
+        description: "Human-readable nutrient name for display in reports"
+        data_tests:
+          - not_null
+      - name: unit
+        data_type: varchar
+        description: "Unit of measurement (g = grams per 100g serving)"
+        data_tests:
+          - not_null
