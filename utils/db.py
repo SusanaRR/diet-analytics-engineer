@@ -14,12 +14,19 @@ import os
 import duckdb
 
 
+ALLOWED_ENVS = {"dev", "prod"}
+
+
 def get_env_prefix() -> str:
-    """Read TARGET_ENV from the environment. Raise SystemExit if missing."""
+    """Read TARGET_ENV from the environment. Raise SystemExit if missing or invalid."""
     env_prefix = os.getenv("TARGET_ENV")
     if not env_prefix:
         raise SystemExit(
             "TARGET_ENV not set. Add it to your .env file. (Example: TARGET_ENV=dev)"
+        )
+    if env_prefix not in ALLOWED_ENVS:
+        raise SystemExit(
+            f"TARGET_ENV must be one of {ALLOWED_ENVS}, got: {env_prefix!r}"
         )
     return env_prefix
 
