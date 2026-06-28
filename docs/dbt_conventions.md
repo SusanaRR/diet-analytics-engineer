@@ -265,6 +265,38 @@ Do not add `created_by` or `updated_by` columns — the "author" is always the p
 
 ---
 
+## Tags
+
+Tags are set in the model YAML under `config.tags` and used to control which models run in a given `dbt build` call.
+
+### `static` tag
+
+Apply to models that represent fixed reference data that never changes between pipeline runs and does not need to be rebuilt daily. The only current example is `dim_date` — a pre-generated date spine covering 2019–2027.
+
+```yaml
+- name: dim_date
+  config:
+    tags: ['static']
+```
+
+Exclude static models from daily builds:
+
+```bash
+dbt build --exclude tag:static
+```
+
+Run static models manually only when their content needs to change (e.g. extending the date range in `dim_date`):
+
+```bash
+dbt run --select dim_date
+```
+
+This tag is also how the Airflow DAG will distinguish daily-refresh models from one-off setup models — the daily operator will always pass `--exclude tag:static`.
+
+When creating a new model YAML entry, check whether the model produces static reference data before omitting the tag. Good candidates: pre-generated date/calendar tables, static lookup dimensions populated from a fixed CSV-like query. Bad candidates: any model that joins to `raw_meal_logs` or any other source that updates daily.
+
+---
+
 ## Schema Separation
 
 Configured in `dbt_project.yml` via `+schema`. Produces `<target>_<schema>` in DuckDB:
