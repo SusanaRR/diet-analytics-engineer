@@ -68,6 +68,8 @@ models:
       nutrient_daily_targets. Protein threshold is personalised per user
       (weight_kg x 0.8 from dim_users); all other thresholds are generic FDA/WHO
       daily values. Carbohydrate has no segment defined and is excluded.
+      Incremental: appends one day per daily run; use --full-refresh to rebuild
+      from scratch (requires raw_meal_logs to contain the full date range first).
       Grain: user + nutrient + date.
     columns:
       - name: user_id

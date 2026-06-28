@@ -150,6 +150,8 @@ dbt docs generate && dbt docs serve                       # generate and browse 
 
 > `generate_meal_logs.py` truncates `raw_meal_logs` before inserting, making it safe to re-run — but only at the raw layer. Re-running `dbt build` after would insert duplicates into the incremental mart tables, since the same day's data would be processed twice. In a real app, a user logs exactly 3 meals per day, so re-running would also regenerate the same day's logs with different random foods — not meaningful data. In production, meal updates would arrive as new app events and require a different ingestion strategy (insert new rows, update existing ones, or event streaming) rather than a full daily regeneration.
 
+> **Incremental models:** `fct_meal_logs`, `fct_meal_log_nutrients`, `fct_bmi_evolution`, and `fct_user_segments` are all incremental — they accumulate history across daily runs. `raw_meal_logs` only ever holds today's data (truncated on each run), so historical data lives exclusively in these incremental marts. A `--full-refresh` on any of them requires `raw_meal_logs` to contain the full date range first — run `generate_historical_meal_logs.py` before `dbt build --full-refresh` if rebuilding from scratch.
+
 ### 5. Run the dashboard
 
 ```bash
