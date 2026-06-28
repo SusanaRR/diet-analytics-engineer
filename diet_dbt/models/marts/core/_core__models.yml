@@ -69,6 +69,8 @@ models:
       requiring date-extraction functions on every query. Fact tables reference
       date_id as a FK to this dimension.
       Grain: date_id (YYYYMMDD integer).
+    config:
+      tags: ['static']
     time_spine:
       standard_granularity_column: full_date
     columns:
