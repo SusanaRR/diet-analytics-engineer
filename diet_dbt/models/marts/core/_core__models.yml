@@ -69,6 +69,8 @@ models:
       requiring date-extraction functions on every query. Fact tables reference
       date_id as a FK to this dimension.
       Grain: date_id (YYYYMMDD integer).
+    time_spine:
+      standard_granularity_column: full_date
     columns:
       - name: date_id
         data_type: integer
@@ -78,24 +80,29 @@ models:
           - not_null
       - name: full_date
         data_type: date
-        description: "The calendar date"
+        granularity: day
+        description: "The calendar date — standard_granularity_column for MetricFlow time spine"
         data_tests:
           - unique
           - not_null
       - name: year
         data_type: integer
+        granularity: year
         description: "Calendar year (e.g. 2026)"
       - name: quarter
         data_type: integer
+        granularity: quarter
         description: "Quarter of the year (1–4)"
       - name: month
         data_type: integer
+        granularity: month
         description: "Month number (1–12)"
       - name: month_name
         data_type: varchar
         description: "Full month name (e.g. June)"
       - name: week_of_year
         data_type: integer
+        granularity: week
         description: "ISO week number within the year (1–53)"
       - name: day_of_month
         data_type: integer
