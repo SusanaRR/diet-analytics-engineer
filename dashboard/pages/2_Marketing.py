@@ -7,7 +7,7 @@ Tab 2 — Flagged Users: daily count of flagged users per nutrient vs total user
 
 import altair as alt
 import streamlit as st
-from db import query, MARTS_SCHEMA, MARKETING_SCHEMA
+from db import query, CORE_SCHEMA, MARKETING_SCHEMA
 from filters import setup_sidebar, user_selectbox
 
 st.set_page_config(page_title="Marketing", layout="wide")
@@ -32,7 +32,7 @@ with tab_windowed:
             fct_user_segments_windowed.is_flagged_last_7d,
             fct_user_segments_windowed.is_flagged_last_30d
         from {MARKETING_SCHEMA}.fct_user_segments_windowed
-        inner join {MARTS_SCHEMA}.dim_nutrients
+        inner join {CORE_SCHEMA}.dim_nutrients
             on fct_user_segments_windowed.nutrient_id = dim_nutrients.nutrient_id
         where fct_user_segments_windowed.user_id = {user_id}
         order by dim_nutrients.nutrient_name
@@ -72,7 +72,7 @@ with tab_flagged:
             count(*)                                                      as total_users,
             sum(case when fct_user_segments.is_flagged then 1 else 0 end) as flagged_users
         from {MARKETING_SCHEMA}.fct_user_segments
-        inner join {MARTS_SCHEMA}.dim_nutrients
+        inner join {CORE_SCHEMA}.dim_nutrients
             on fct_user_segments.nutrient_id = dim_nutrients.nutrient_id
         where fct_user_segments.logged_date between '{start_date}' and '{end_date}'
         group by

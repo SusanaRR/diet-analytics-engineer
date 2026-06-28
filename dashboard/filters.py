@@ -7,7 +7,7 @@ Shared helpers — call setup_sidebar() at the top of each page.
 from datetime import date
 
 import streamlit as st
-from db import query, MARTS_SCHEMA
+from db import query, CORE_SCHEMA, USER_HEALTH_SCHEMA
 
 APP_LAUNCH_DATE = date(2026, 5, 1)
 
@@ -29,7 +29,7 @@ def setup_sidebar():
     st.markdown(SMALL_FONT_CSS, unsafe_allow_html=True)
 
     max_row = query(f"""
-        select max(logged_date) as max_date from {MARTS_SCHEMA}.fct_meal_logs
+        select max(logged_date) as max_date from {USER_HEALTH_SCHEMA}.fct_meal_logs
     """)
     max_date = max_row["max_date"].iloc[0]
 
@@ -54,7 +54,7 @@ def setup_sidebar():
 def user_selectbox(key="user_sel"):
     """Render a user selectbox inline on the page. Returns selected user_id."""
     users = query(f"""
-        select user_id from {MARTS_SCHEMA}.dim_users order by user_id
+        select user_id from {CORE_SCHEMA}.dim_users order by user_id
     """)
     return st.selectbox(
         "User",

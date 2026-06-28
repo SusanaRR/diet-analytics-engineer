@@ -21,8 +21,9 @@ _DB_NAME      = f"{_TARGET_ENV}_diet_app"
 _DB_PATH      = _PROJECT_ROOT / "data" / f"{_DB_NAME}.duckdb"
 
 # Schema names mirror dbt_project.yml + profiles.yml prefix
-MARTS_SCHEMA     = f"{_TARGET_ENV}_marts"
-MARKETING_SCHEMA = f"{_TARGET_ENV}_marketing"
+CORE_SCHEMA        = f"{_TARGET_ENV}_core"
+USER_HEALTH_SCHEMA = f"{_TARGET_ENV}_user_health"
+MARKETING_SCHEMA   = f"{_TARGET_ENV}_marketing"
 
 
 @st.cache_resource

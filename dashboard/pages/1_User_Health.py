@@ -6,7 +6,7 @@ Tabs: Overview | Nutrients | Trends | Food Log | BMI
 
 import altair as alt
 import streamlit as st
-from db import query, MARTS_SCHEMA
+from db import query, CORE_SCHEMA, USER_HEALTH_SCHEMA
 from filters import setup_sidebar, user_selectbox
 
 st.set_page_config(page_title="User Health", layout="wide")
@@ -32,8 +32,8 @@ with tab_overview:
             dim_users.bmi_category,
             dim_users.recommended_protein_g,
             dim_date.full_date as registered_date
-        from {MARTS_SCHEMA}.dim_users
-        inner join {MARTS_SCHEMA}.dim_date
+        from {CORE_SCHEMA}.dim_users
+        inner join {CORE_SCHEMA}.dim_date
             on dim_users.registered_date_id = dim_date.date_id
         where dim_users.user_id = {user_id}
     """)
@@ -62,8 +62,8 @@ with tab_nutrients:
                 dim_nutrients.nutrient_name,
                 fct_meal_log_nutrients.logged_date,
                 sum(fct_meal_log_nutrients.value_g) as daily_value_g
-            from {MARTS_SCHEMA}.fct_meal_log_nutrients
-            inner join {MARTS_SCHEMA}.dim_nutrients
+            from {USER_HEALTH_SCHEMA}.fct_meal_log_nutrients
+            inner join {CORE_SCHEMA}.dim_nutrients
                 on fct_meal_log_nutrients.nutrient_id = dim_nutrients.nutrient_id
             where fct_meal_log_nutrients.user_id = {user_id}
                 and fct_meal_log_nutrients.logged_date between '{start_date}' and '{end_date}'
@@ -115,8 +115,8 @@ with tab_trends:
                 dim_nutrients.nutrient_name,
                 fct_meal_log_nutrients.logged_date,
                 sum(fct_meal_log_nutrients.value_g) as daily_value_g
-            from {MARTS_SCHEMA}.fct_meal_log_nutrients
-            inner join {MARTS_SCHEMA}.dim_nutrients
+            from {USER_HEALTH_SCHEMA}.fct_meal_log_nutrients
+            inner join {CORE_SCHEMA}.dim_nutrients
                 on fct_meal_log_nutrients.nutrient_id = dim_nutrients.nutrient_id
             where fct_meal_log_nutrients.user_id = {user_id}
                 and fct_meal_log_nutrients.logged_date between '{start_date}' and '{end_date}'
@@ -141,8 +141,8 @@ with tab_trends:
                 dim_nutrients.nutrient_name,
                 fct_meal_log_nutrients.logged_date,
                 sum(fct_meal_log_nutrients.value_g) as daily_value_g
-            from {MARTS_SCHEMA}.fct_meal_log_nutrients
-            inner join {MARTS_SCHEMA}.dim_nutrients
+            from {USER_HEALTH_SCHEMA}.fct_meal_log_nutrients
+            inner join {CORE_SCHEMA}.dim_nutrients
                 on fct_meal_log_nutrients.nutrient_id = dim_nutrients.nutrient_id
             where fct_meal_log_nutrients.user_id = {user_id}
                 and fct_meal_log_nutrients.logged_date between '{start_date}' and '{end_date}'
@@ -230,10 +230,10 @@ with tab_food:
             dim_meals.meal_name,
             dim_foods.description,
             fct_meal_logs.grams
-        from {MARTS_SCHEMA}.fct_meal_logs
-        inner join {MARTS_SCHEMA}.dim_meals
+        from {USER_HEALTH_SCHEMA}.fct_meal_logs
+        inner join {CORE_SCHEMA}.dim_meals
             on fct_meal_logs.meal_id = dim_meals.meal_id
-        inner join {MARTS_SCHEMA}.dim_foods
+        inner join {USER_HEALTH_SCHEMA}.dim_foods
             on fct_meal_logs.fdc_id = dim_foods.fdc_id
         where fct_meal_logs.user_id = {user_id}
             and fct_meal_logs.logged_date between '{start_date}' and '{end_date}'
@@ -269,8 +269,8 @@ with tab_bmi:
             dim_date.full_date as recorded_date,
             fct_bmi_evolution.weight_kg,
             fct_bmi_evolution.bmi
-        from {MARTS_SCHEMA}.fct_bmi_evolution
-        inner join {MARTS_SCHEMA}.dim_date
+        from {USER_HEALTH_SCHEMA}.fct_bmi_evolution
+        inner join {CORE_SCHEMA}.dim_date
             on fct_bmi_evolution.recorded_date_id = dim_date.date_id
         where fct_bmi_evolution.user_id = {user_id}
             and dim_date.full_date between '{start_date}' and '{end_date}'
