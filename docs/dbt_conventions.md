@@ -262,6 +262,7 @@ Do not add `created_by` or `updated_by` columns — the "author" is always the p
 - Always use `{{ ref('model_name') }}` to reference models and seeds — never hardcode schema or table names.
 - Always use `{{ source('source_name', 'table_name') }}` for raw source tables.
 - Database name in sources YAML: `"{{ env_var('TARGET_ENV', 'dev') }}_diet_app"` — dbt does not read `.env` files, so `TARGET_ENV` must be exported to the shell or set as an Airflow Variable in production.
+- **Use `dbt.date_spine()` not `dbt_utils.date_spine()`** — since dbt Core 1.7 a native `date_spine` macro is built into dbt itself. Prefer `{{ dbt.date_spine(...) }}` over `{{ dbt_utils.date_spine(...) }}` — same arguments, same output, no package dependency needed. This is also what MetricFlow expects when configuring a time spine model. `dim_date` uses the native macro.
 
 ---
 
